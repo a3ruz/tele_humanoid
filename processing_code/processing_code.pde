@@ -8,6 +8,8 @@ Image is reversed:  LEFT -> RIGHT
 import processing.serial.*;
 import SimpleOpenNI.*;
 
+boolean bot_mirror = false;
+
 Serial myPort;
 SimpleOpenNI  Kinect;
 
@@ -49,7 +51,8 @@ PVector com2d = new PVector();
 //variables for serial transmission to arduino
 char skelData[] = new char[3];
 int[] angles = new int[6];
-
+float[] map_angles = new float[6];
+String datain=new String();
 
 int spoint[]=new int[11];
 void setup()
@@ -61,9 +64,8 @@ void setup()
   
   String portName = Serial.list()[1];
   println(Serial.list());
-  myPort = new Serial(this, portName, 115200);
-  myPort.bufferUntil('\n');
-  
+  myPort = new Serial(this, "COM17", 9600);
+  //myPort.bufferUntil('\n');
   // enablinng and checking the kinect 
   Kinect = new SimpleOpenNI(this);
   if(Kinect.isInit() == false)
@@ -81,11 +83,14 @@ void setup()
   strokeWeight(3);
   smooth();
 }
+int m = millis();
+int lasttime=0;
 // Function that loops untill the program is closed 
 void draw() 
 {
   Kinect.update(); 
   image(Kinect.depthImage(),0,0);
+  
   
   //draw lines for human to align with
   strokeWeight(5);
@@ -104,7 +109,15 @@ void draw()
     getUserData(userList[0]);
     makevector(1);
     updateAngles();
-   senddata();
+    mapangles();
+    
+   m=millis();
+   if(m>(lasttime+500))
+   {
+     senddata();
+   lasttime=m;
+ }
+   
    stroke(255,0,0);  // stroke(userClr[ (userList[i] - 1) % userClr.length ] );
    strokeWeight(3); 
    drawSkeleton(userList[0]);
@@ -238,13 +251,13 @@ void makevector(int userId)
 
 void updateAngles()
 {
+  
   angles[0]= angle(lShoulder,lElbow, lHand);
   angles[1]= angle(lElbow, lShoulder, lHip);
-  angles[2]=angle(rHip, rShoulder, rElbow);
-  angles[3]=angle( rHand, rElbow,rShoulder);
-  
-  angles[4]=sangle( lHip, lShoulder,lElbow);
-  angles[5]=sangle( rHip,rShoulder,rElbow);
+  angles[4]=angle(rHip, rShoulder, rElbow);
+  angles[5]=angle( rHand, rElbow,rShoulder);
+  angles[2]=sangle( lHip, lShoulder,lElbow);
+  angles[3]=sangle( rHip,rShoulder,rElbow);
   
   
 }
@@ -259,7 +272,6 @@ void getUserData(int userId)
      
   
   //start trassmit data to arduino
-  myPort.write(123);
   
  
   spoint[0]=int(LHand.x/10);
@@ -280,11 +292,12 @@ background(51);
   text(spoint[3],900,100);
   
    text("ANGLES",700 ,150);
-   text("LE "+angles[0]+"  LS  "+angles[1]+" RS "+angles[2]+" RE " +angles[3],700,200);
+   text("LE "+angles[0]+"  LS  "+angles[1]+" RS "+angles[4]+" RE " +angles[5],700,200);
  
    text("ANGLES",700 ,250);
     
-   text("LSO  " +angles[4]+"  RSO  "+angles[5],700,300);
+   text("LSO  " +angles[2]+"  RSO  "+angles[3],700,300);
+   text("SERIAL " +datain,700,400);
   }
 
 // Function for measuring angle 
@@ -321,26 +334,66 @@ return ang;
 
 /// FUnction Ends here 
 
+void mapangles()
+{
+  if(bot_mirror==true)
+  {
+  map_angles[0]=map(angles[0],100,0,0,900);
+  map_angles[1]=map(angles[1],0,160,0,900);
+  //SHOULDER ORIENTATION 
+  map_angles[2]=map(angles[2],60,250,0,900);
+  
+  map_angles[3]=map(angles[3],250,70,0,900);
+  
+  
+  map_angles[4]=map(angles[4],160,0,0,900);
+  map_angles[5]=map(angles[5],0,100,0,900);
+  
+  }
+  
+if(bot_mirror==false)
+  {
+  map_angles[0]=map(angles[5],100,0,0,900);
+  map_angles[1]=map(angles[4],0,160,0,900);
+  //SHOULDER ORIENTATION 
+  map_angles[2]=map(angles[3],60,250,0,900);
+  
+  map_angles[3]=map(angles[2],250,70,0,900);
+  
+  
+  map_angles[4]=map(angles[1],160,0,0,900);
+  map_angles[5]=map(angles[0],0,100,0,900);
+  
+  }
+  
+map_angles[0]=constrain(map_angles[0],0,900);
+map_angles[1]=constrain(map_angles[1],0,900);
+map_angles[2]=constrain(map_angles[2],0,900);
+map_angles[3]=constrain(map_angles[3],0,900);
+map_angles[4]=constrain(map_angles[4],0,900);
+map_angles[5]=constrain(map_angles[5],0,900);
+
+
+}
+
 //SENDING DATA OVER SERIAL PORT 
 void senddata()
 {
- myPort.write(212); // begin arduino communication
+ myPort.write('B'); // begin arduino communication
+ 
  for(int i=0 ;i<6;i++)
  {
-   int data=angle[i]/10;
+   int data_t=int(map_angles[i])/10;
+   int data_h=data_t/10;
+   data_t=data_t%10;
  
-if(data > 10){
-      myPort.write(0);
-      myPort.write(data);
+      myPort.write('0');
+      myPort.write(str(data_h));
+      myPort.write(str(data_t));
     }
-    
-    if(data < 10 && data >= 0){
-     myPort.write(0);
-      myPort.write(0);
-      myPort.write(data);
-  }
- }
- myPort.write(222); // ends arduino communication 
+
+  myPort.write('E');
+ //delay(500);// ends arduino communication 
 }
 
 ////DONT TOUCH BELOW 

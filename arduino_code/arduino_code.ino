@@ -16,59 +16,58 @@ Image is reversed:  LEFT -> RIGHT
   212 -> { -> start
  222-> } -> stop
 
-         NAME            SERVO NO      MIN          MAX            NEUTRAL    CALIBRATION MIN     CALIBRATION MAX
+         NAME            SERVO NO      MIN          MAX            NEUTRAL    CALIBRATION MIN     CALIBRATION MAX  miimum for close , max for open 
          ________________________________________________________________________________________________________
      
-         LHAND              0          080           150              115           0                 180
-         LSHOULDER          1          073           163              118           0                 180
-         LSHOULDER PITCH    4          000           159              080           0                 180
+         LHAND              0          080           020              115           016               000
+         LSHOULDER          1          150           000              118           016               000
+         LSHOULDER PITCH    4          178           030              080           030               004
          
-         RHAND              3          150           080              115           0                 180
-         RSHOULDER          2          163           070              118           0                 180
-         RSHOULDER PITCH    5          159           000              080           0                 180
-         
+         RHAND              3          160           090              115           016               000
+         RSHOULDER          2          010           090              118           016               000
+         RSHOULDER PITCH    5          180           000              080           025               010         
        
-*/
+*///use smallletters for servo calibrted values,Block Letters for realtime data 
 //------SERVO A
-#define servoamin 20
-#define servoamax 35
-#define SERVOAMIN 5  
-#define SERVOAMAX 180
+#define servoamin 3
+#define servoamax 60
+#define SERVOAMIN 0 
+#define SERVOAMAX 90
 
 //------SERVO B
 
-#define servobmin 20
-#define servobmax 35
-#define SERVOBMIN 5 
-#define SERVOBMAX 180
+#define servobmin 1
+#define servobmax 175
+#define SERVOBMIN 0
+#define SERVOBMAX 90
 
 //------SERVO C
 
-#define servocmin 20 
-#define servocmax 35 
-#define SERVOCMIN 5 
-#define SERVOCMAX 180
+#define servocmin 1 
+#define servocmax 180 
+#define SERVOCMIN 0
+#define SERVOCMAX 90
 
 //------SERVO D
 
-#define servodmin 20 
-#define servodmax 35 
-#define SERVODMIN 5  
-#define SERVODMAX 180
+#define servodmin 3
+#define servodmax 180
+#define SERVODMIN 0
+#define SERVODMAX 90
 
 //------SERVO E
 
-#define servoemin 20
-#define servoemax 35 
-#define SERVOEMIN 5 
-#define SERVOEMAX 180
+#define servoemin 3
+#define servoemax 180
+#define SERVOEMIN 0
+#define SERVOEMAX 90
 
 //------SERVO F
 
-#define servofmin 20
-#define servofmax 35 
-#define SERVOFMIN 5 
-#define SERVOFMAX 180
+#define servofmin 95
+#define servofmax 165
+#define SERVOFMIN 0
+#define SERVOFMAX 90
 
 int pulselen;
 
@@ -76,47 +75,34 @@ String inputString = "";
 boolean stringComplete = false;
 boolean sendData = false;
 
+int SERVO[6];
 void setup() {
     Serial.begin(9600);
-  Serial.println("PROGRAM INITIATED");
+   // Serial.print('3');
+  Serial.println("PROGRAM INITIATED*");
   pwm.begin();
   pwm.setPWMFreq(50);  // Analog servos run at ~60 Hz updates
   delay(10);
+      //          limit();
 
+
+
+stringComplete = true;
+inputString="090090000090000000";
 }
 int pos (int x)
 {
   int k;
-  k=map(x,5,175 ,SERVOMIN, SERVOMAX);
+  k=map(x,0,180 ,SERVOMIN, SERVOMAX);
   return k;
   
 }
-int SERVO[6];
+
+
 void loop() {
   
- /* TEST PROGRAM ######################################  
-pwm.setPWM(0,0,pos(90));  
-pwm.setPWM(1,0,pos(90));
-  pwm.setPWM(2,0,pos(180));
- pwm.setPWM(3,0,pos(90));
-  pwm.setPWM(4,0,pos(90));
-   pwm.setPWM(5,0,pos(90));
- delay (500);
 
-pwm.setPWM(0,0,pos(0));
- pwm.setPWM(1,0,pos(0));
-   pwm.setPWM(2,0,pos(90));
-  pwm.setPWM(3,0,pos(0));
-  pwm.setPWM(4,0,pos(0));
-   pwm.setPWM(5,0,pos(180));
- delay(500);
- // pwm.setPWM(1,0,pos(90));
- //  pwm.setPWM(2,0,pos(90));
-  //  pwm.setPWM(3,0,pos(90));
-   //  pwm.setPWM(4,0,pos(90));
-    //  pwm.setPWM(5,0,pos(90));
-      ####################################################### */
-      if (stringComplete) {
+     if (stringComplete) {
     //put data into data array
     int stringLength = inputString.length() / 3;
     String data[ stringLength ];
@@ -128,37 +114,58 @@ pwm.setPWM(0,0,pos(0));
     }
     Serial.println();
 
-    SERVO[0]=( map(data[0].toInt(), servoamin ,servoamax, SERVOAMAX,SERVOAMIN) );
-    SERVO[1]=( map(data[1].toInt(), servobmin ,servobmax, SERVOBMAX,SERVOBMIN) );
-    SERVO[2]=( map(data[2].toInt(), servocmin ,servocmax, SERVOCMAX,SERVOCMIN) );
-    SERVO[3]=( map(data[3].toInt(), servodmin ,servodmax, SERVODMAX,SERVODMIN) );
-    SERVO[4]=( map(data[4].toInt(), servoemin ,servoemax, SERVOEMAX,SERVOEMIN) );
-    SERVO[5]=( map(data[5].toInt(), servofmin ,servofmax, SERVOFMAX,SERVOFMIN) );
-
+    SERVO[0]=( map(data[0].toInt(), SERVOAMIN,SERVOAMAX, servoamin ,servoamax) );
+    SERVO[1]=( map(data[1].toInt(), SERVOBMIN,SERVOBMAX, servobmin ,servobmax) );
+    SERVO[2]=( map(data[2].toInt(), SERVOCMIN,SERVOCMAX, servocmin ,servocmax) );
+    SERVO[3]=( map(data[3].toInt(), SERVODMIN,SERVODMAX, servodmin ,servodmax) );
+    SERVO[4]=( map(data[4].toInt(), SERVOEMIN,SERVOEMAX, servoemin ,servoemax) );
+    SERVO[5]=( map(data[5].toInt(), SERVOFMIN,SERVOFMAX, servofmin ,servofmax) );
+//limit();
  servoupdate();
     //prepare to take in new data
-    inputString = "";
+   
     stringComplete = false;
   }
 
 }
+/*void limit()
+{
+SERVO[0]= constrain(SERVO[0], servoamin, servoamax);
+SERVO[1]= constrain(SERVO[1], servobmin, servobmax);
+SERVO[2]= constrain(SERVO[2], servocmin, servocmax);
+SERVO[3]= constrain(SERVO[3], servodmin, servodmax);
+SERVO[4]= constrain(SERVO[4], servoemin, servoemax);
+SERVO[5]= constrain(SERVO[5], servofmin, servofmax);
+  
+}*/
 
 void servoupdate()
 {
+  
   for(int i=0 ;i<6;i++)
   pwm.setPWM(i,0,pos(SERVO[i]));
 }
 void serialEvent() {
+  Serial.println("Serial event called ");
   while (Serial.available()) {
-    int inChar = Serial.read();
-
-    if (inChar == 212) {
+    char inChar = Serial.read();
+//Serial.println(inChar);
+    if (inChar =='E') {
       sendData = false;
       stringComplete = true;
+     Serial.println(inputString);
     }
     if (sendData)
+    {
       inputString += inChar;
-    if (inChar == 222)
+    Serial.println(inputString);
+    }
+    if (inChar == 'B')
+     {
+       inputString = "";
       sendData = true;
+    
+     }
   }
+  
 }
